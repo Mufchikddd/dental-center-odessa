@@ -5,7 +5,7 @@
 
 const hits = new Map(); // простий ліміт запитів з однієї адреси (в межах одного екземпляра функції)
 const WINDOW_MS = 10 * 60 * 1000;
-const MAX_HITS = 5;
+const MAX_HITS = 6;
 
 const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
@@ -40,14 +40,12 @@ async function handle(req, res) {
     if (!ok) return res.status(403).json({ ok: false, error: 'origin' });
   }
 
-  // ліміт: не більше MAX_HITS заявок за 10 хвилин з однієї адреси
+  // ліміт: не більше MAX_HITS ВІДПРАВОК в Telegram за 10 хвилин з однієї адреси
+  // (помилкові/неповні спроби та проблеми з налаштуваннями ліміт не «з'їдають»)
   const ip = String(req.headers['x-forwarded-for'] || req.socket?.remoteAddress || 'ip').split(',')[0].trim();
   const now = Date.now();
   const recent = (hits.get(ip) || []).filter((t) => now - t < WINDOW_MS);
   if (recent.length >= MAX_HITS) return res.status(429).json({ ok: false, error: 'rate' });
-  recent.push(now);
-  hits.set(ip, recent);
-  if (hits.size > 5000) hits.clear();
 
   const body = parseBody(req);
   if (!body) return res.status(400).json({ ok: false, error: 'body' });
@@ -98,6 +96,11 @@ async function handle(req, res) {
 
   const results = await Promise.all(chats.map(send));
   if (!results.some(Boolean)) return res.status(502).json({ ok: false, error: 'telegram' });
+
+  // у ліміт рахуємо лише УСПІШНІ відправки (щоб збої Telegram не блокували повторні спроби)
+  recent.push(now);
+  hits.set(ip, recent);
+  if (hits.size > 5000) hits.clear();
   return res.status(200).json({ ok: true });
 }
 
