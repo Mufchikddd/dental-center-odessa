@@ -1,4 +1,14 @@
 /* v2 helpers */
+window.__sendLead=function(f){
+  var nm=f.querySelector('#leadName'),ph=f.querySelector('#leadPhone'),hp=f.querySelector('[name=website]');
+  var ctrl=('AbortController' in window)?new AbortController():null,tm=setTimeout(function(){if(ctrl)ctrl.abort();},15000);
+  return fetch('/api/lead',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({name:nm.value.trim(),phone:ph.value,website:hp?hp.value:'',lang:document.documentElement.lang}),
+    signal:ctrl?ctrl.signal:undefined})
+  .then(function(r){clearTimeout(tm);if(!r.ok)throw new Error('http '+r.status);return r.json();})
+  .then(function(j){if(!j||!j.ok)throw new Error('bad');return j;},function(e){clearTimeout(tm);throw e;});
+};
+window.__leadErr=function(){return document.documentElement.lang==='en'?'Could not send your request. Please call us: +38 (048) 708 03 96':'Не вдалося надіслати заявку. Зателефонуйте нам: +38 (048) 708 03 96';};
 window.__lastTouch=0;
 window.__swipe=function(el,cb){
   var x0=null,y0=null;
@@ -109,10 +119,10 @@ tr.addEventListener('scroll',upd,{passive:true});addEventListener('resize',upd);
 var f=document.getElementById('leadForm');
 if(f){var b=f.querySelector('.btn'),l=b.querySelector('.lbl'),ic=b.querySelector('i'),m=document.getElementById('leadMsg'),m0=m.textContent,l0=l.textContent,i0=ic.innerHTML,busy=false;
 f.addEventListener('submit',function(e){e.preventDefault();if(busy)return;busy=true;b.classList.add('loading');l.textContent=(window.__t?__t('form.sending'):'Надсилаємо…');ic.textContent='↻';
-setTimeout(function(){b.classList.remove('loading');b.classList.add('done');l.textContent=(window.__t?__t('form.sent'):'Заявку надіслано');
+__sendLead(f).then(function(){m.classList.remove('err');b.classList.remove('loading');b.classList.add('done');l.textContent=(window.__t?__t('form.sent'):'Заявку надіслано');
 ic.innerHTML='<svg class="chk" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
 m.classList.remove('swap');void m.offsetWidth;m.classList.add('swap');m.textContent=(window.__t?__t('form.thanks'):'Дякуємо! Передзвонимо вам протягом 15 хвилин.');f.classList.add('sent');
-setTimeout(function(){b.classList.remove('done');l.textContent=(window.__t?__t('nav.book'):l0);ic.innerHTML=i0;m.classList.remove('swap');m.textContent=(window.__t?__t('cta.lead'):m0);f.classList.remove('sent');f.reset();busy=false;},6500);},1000);});}
+setTimeout(function(){b.classList.remove('done');l.textContent=(window.__t?__t('nav.book'):l0);ic.innerHTML=i0;m.classList.remove('swap');m.textContent=(window.__t?__t('cta.lead'):m0);f.classList.remove('sent');f.reset();busy=false;},6500);},function(err){b.classList.remove('loading');l.textContent=(window.__t?__t('nav.book'):l0);ic.innerHTML=i0;m.classList.remove('swap');void m.offsetWidth;m.classList.add('swap','err');m.textContent=__leadErr();busy=false;});});}
 })();
 ;
 (function(){

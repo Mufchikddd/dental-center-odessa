@@ -912,3 +912,7 @@ h1,h2,h3{overflow-wrap:break-word}
 .svc-photo.img{position:relative}
 .svc-photo.img img{position:absolute;inset:0}
 .svc-photo.img.sq{--pt:100%}
+
+/* --- 13. Форма заявки в Telegram: пастка для ботів і повідомлення про помилку --- */
+.hp{position:absolute!important;left:-9999px;width:1px;height:1px;opacity:0;pointer-events:none}
+.lead-msg.err{color:#ffd9d9;font-weight:500}
