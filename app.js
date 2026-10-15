@@ -353,7 +353,7 @@ els.forEach(function(e){io.observe(e);});
 /* Services page: tile photos reuse the photos already on the service pages; reveal on scroll */
 (function(){
 var pg=document.getElementById('services');if(!pg)return;
-[].forEach.call(pg.querySelectorAll('.sv-img[data-from]'),function(im){var src=document.querySelector(im.getAttribute('data-from'));if(src&&src.getAttribute('src'))im.src=src.getAttribute('src');});
+[].forEach.call(pg.querySelectorAll('.sv-img[data-from]'),function(im){var src=document.querySelector(im.getAttribute('data-from'));var u=src&&(src.getAttribute('src')||src.getAttribute('data-src'));if(u){if(im.getAttribute('src'))im.removeAttribute('src');im.setAttribute('data-src',u);}});
 var els=[].slice.call(pg.querySelectorAll('.sv-rv'));
 if(!('IntersectionObserver' in window)){els.forEach(function(e){e.classList.add('in');});return;}
 var io=new IntersectionObserver(function(es){es.forEach(function(e){if(!e.isIntersecting)return;var t=e.target;t.classList.add('in');io.unobserve(t);setTimeout(function(){t.style.removeProperty('--d');},1800);});},{threshold:.1});
@@ -405,4 +405,22 @@ if(ph.form)ph.form.addEventListener('reset',function(){setTimeout(function(){ph.
   if(!('IntersectionObserver' in window)){all();return;}
   var io=new IntersectionObserver(function(es){if(es[0].isIntersecting){all();io.disconnect();}},{rootMargin:'900px 0px'});
   io.observe(st);
+})();
+
+;(function(){
+  /* Завантаження картинок без native loading=lazy (у Safari на iPhone він ненадійний для прихованих сторінок і слайдерів) */
+  function load(i){var u=i.getAttribute('data-src');if(u){i.setAttribute('src',u);i.removeAttribute('data-src');}}
+  function loadIn(root){[].forEach.call(root.querySelectorAll('img[data-src]'),load);}
+  window.__loadImgs=loadIn;
+  var home=document.getElementById('home');
+  if(home){
+    if('IntersectionObserver' in window){
+      var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){loadIn(e.target);io.unobserve(e.target);}});},{rootMargin:'1400px 0px'});
+      [].forEach.call(home.children,function(c){io.observe(c);});
+      /* перші секції одразу, решту — страхуємо таймером після повного завантаження */
+      addEventListener('load',function(){setTimeout(function(){loadIn(home);},6000);});
+    }else{loadIn(home);}
+  }
+  function page(){var id=decodeURIComponent(location.hash.replace('#','')),p=id&&document.getElementById(id);if(p&&p.tagName==='MAIN')loadIn(p);}
+  addEventListener('hashchange',page);page();
 })();
