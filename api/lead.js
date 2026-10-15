@@ -24,7 +24,7 @@ function parseBody(req) {
   return b && typeof b === 'object' ? b : null;
 }
 
-module.exports = async (req, res) => {
+async function handle(req, res) {
   res.setHeader('Cache-Control', 'no-store');
 
   if (req.method !== 'POST') {
@@ -63,7 +63,7 @@ module.exports = async (req, res) => {
   const chats = String(process.env.TELEGRAM_CHAT_ID || '').split(',').map((s) => s.trim()).filter(Boolean);
   if (!token || !chats.length) {
     console.error('lead: не задано TELEGRAM_BOT_TOKEN або TELEGRAM_CHAT_ID');
-    return res.status(500).json({ ok: false, error: 'not_configured' });
+    return res.status(500).json({ ok: false, error: !token ? 'no_token' : 'no_chat' });
   }
 
   const when = new Date().toLocaleString('uk-UA', { timeZone: 'Europe/Kyiv', dateStyle: 'short', timeStyle: 'short' });
@@ -99,4 +99,13 @@ module.exports = async (req, res) => {
   const results = await Promise.all(chats.map(send));
   if (!results.some(Boolean)) return res.status(502).json({ ok: false, error: 'telegram' });
   return res.status(200).json({ ok: true });
+}
+
+module.exports = async (req, res) => {
+  try {
+    await handle(req, res);
+  } catch (e) {
+    console.error('lead: збій у функції', e && e.message);
+    if (!res.headersSent) res.status(500).json({ ok: false, error: 'crash' });
+  }
 };
