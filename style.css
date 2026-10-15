@@ -898,3 +898,17 @@ h1,h2,h3{overflow-wrap:break-word}
 
 /* --- 11. Слайди галереї без фото, поки не підвантажені (економія трафіку на старті) --- */
 .slide:not(.on):not(.ld){background-image:none}
+
+/* --- 12. Safari/iOS: aspect-ratio у розтягнутих grid-елементах міг схлопуватись у 0 (зникали фото лікарів і послуг) --- */
+.team-photos,.svc-photo{align-self:start}
+/* запасна висота, яка не залежить від aspect-ratio (padding у % рахується від власної ширини) */
+.team-photos::before{content:"";display:block;padding-top:100%}
+.svc-photo:not(.img):not(.tall)::before{content:"";display:block;padding-top:66.6667%}
+.svc-photo.sq:not(.img):not(.tall)::before{padding-top:100%}
+.svc-photo.tall::before{content:"";display:block;padding-top:150%}
+.svc-photo.tall img{position:absolute;inset:0}
+.svc-photo.tall{position:relative}
+.svc-photo.img::before{content:"";display:block;padding-top:var(--pt,66.6667%)}
+.svc-photo.img{position:relative}
+.svc-photo.img img{position:absolute;inset:0}
+.svc-photo.img.sq{--pt:100%}
